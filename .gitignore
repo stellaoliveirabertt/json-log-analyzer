@@ -1,0 +1,47 @@
+# Ambientes virtuais
+venv/
+.env/
+.venv/
+
+# Arquivos do sistema
+__pycache__/
+*.py[cod]
+*.log
+*.sqlite3
+.DS_Store
+*.swp
+
+# IDEs
+.vscode/
+.idea/
+*.sublime-project
+*.sublime-workspace
+
+# Uploads temporários
+*.tmp
+*.bak
+*.old
+
+# Arquivos temporários do sistema
+*.~ 
+Thumbs.db
+
+# Pytest e coverage
+.coverage
+.tox/
+.pytest_cache/
+htmlcov/
+coverage.xml
+
+# Configs locais
+.env.local
+.env.development
+.env.production
+
+# Arquivos do Flask
+instance/
+*.db
+
+# Ignorar arquivos gerados de log JSON de testes
+test_log.json
+log.txt
