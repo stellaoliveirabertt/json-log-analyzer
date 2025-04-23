@@ -1,0 +1,488 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Analisador de Logs JSON</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            line-height: 1.6;
+            color: #333;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        
+        h1, h2, h3 {
+            color: #2c3e50;
+        }
+        
+        .container {
+            background-color: white;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+            padding: 30px;
+            margin-bottom: 30px;
+        }
+        
+        .tabs {
+            display: flex;
+            margin-bottom: 20px;
+            border-bottom: 1px solid #ddd;
+        }
+        
+        .tab {
+            padding: 10px 20px;
+            cursor: pointer;
+            border: 1px solid transparent;
+            border-bottom: none;
+            border-radius: 4px 4px 0 0;
+            background-color: #f8f9fa;
+            margin-right: 5px;
+        }
+        
+        .tab.active {
+            background-color: white;
+            border-color: #ddd;
+            border-bottom-color: white;
+            margin-bottom: -1px;
+            font-weight: bold;
+        }
+        
+        .tab-content {
+            display: none;
+        }
+        
+        .tab-content.active {
+            display: block;
+        }
+        
+        .form-group {
+            margin-bottom: 20px;
+        }
+        
+        label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 600;
+        }
+        
+        input[type="file"] {
+            display: block;
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            background-color: #f8f9fa;
+        }
+        
+        textarea {
+            width: 100%;
+            min-height: 200px;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            font-family: monospace;
+            resize: vertical;
+        }
+        
+        button {
+            background-color: #3498db;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 16px;
+            transition: background-color 0.3s;
+        }
+        
+        button:hover {
+            background-color: #2980b9;
+        }
+        
+        .result {
+            margin-top: 30px;
+            display: none;
+        }
+        
+        .result pre {
+            background-color: #f8f9fa;
+            padding: 15px;
+            border-radius: 4px;
+            overflow-x: auto;
+            white-space: pre-wrap;
+            font-family: monospace;
+            border: 1px solid #ddd;
+        }
+        
+        .error {
+            color: #e74c3c;
+            background-color: #fadbd8;
+            padding: 10px;
+            border-radius: 4px;
+            margin-top: 10px;
+            display: none;
+        }
+        
+        .loading {
+            display: none;
+            text-align: center;
+            margin: 20px 0;
+        }
+        
+        .spinner {
+            border: 4px solid rgba(0, 0, 0, 0.1);
+            border-radius: 50%;
+            border-top: 4px solid #3498db;
+            width: 30px;
+            height: 30px;
+            animation: spin 1s linear infinite;
+            margin: 0 auto;
+        }
+        
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        
+        .summary-box {
+            background-color: #eaf2f8;
+            border-left: 4px solid #3498db;
+            padding: 15px;
+            margin-bottom: 20px;
+            border-radius: 0 4px 4px 0;
+        }
+        
+        .event-type {
+            display: inline-block;
+            padding: 3px 8px;
+            border-radius: 4px;
+            font-size: 14px;
+            font-weight: bold;
+            margin-right: 10px;
+        }
+        
+        .event-error {
+            background-color: #fadbd8;
+            color: #c0392b;
+        }
+        
+        .event-info {
+            background-color: #d1f2eb;
+            color: #16a085;
+        }
+        
+        .event-warning {
+            background-color: #fef9e7;
+            color: #f39c12;
+        }
+        
+        .details-section {
+            margin-top: 20px;
+            border-top: 1px solid #ddd;
+            padding-top: 20px;
+        }
+        
+        .details-section h3 {
+            margin-top: 0;
+        }
+        
+        .component-list {
+            list-style-type: none;
+            padding-left: 0;
+        }
+        
+        .component-list li {
+            padding: 5px 0;
+            border-bottom: 1px solid #eee;
+        }
+        
+        .component-list li:last-child {
+            border-bottom: none;
+        }
+        
+        .trace-id {
+            font-family: monospace;
+            background-color: #f8f9fa;
+            padding: 2px 5px;
+            border-radius: 3px;
+            font-size: 14px;
+        }
+        
+        footer {
+            margin-top: 50px;
+            text-align: center;
+            color: #7f8c8d;
+            font-size: 14px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Analisador de Logs JSON</h1>
+        <p>Esta ferramenta analisa logs em formato JSON e fornece informações de forma breve e explicativa.</p>
+        
+        <div class="tabs">
+            <div class="tab active" data-tab="file-upload">Upload de Arquivo</div>
+            <div class="tab" data-tab="json-input">Entrada JSON</div>
+        </div>
+        
+        <div class="tab-content active" id="file-upload">
+            <form id="upload-form">
+                <div class="form-group">
+                    <label for="log-file">Selecione um arquivo de log JSON:</label>
+                    <input type="file" id="log-file" accept=".json,.txt" required>
+                </div>
+                <button type="submit">Analisar Log</button>
+            </form>
+        </div>
+        
+        <div class="tab-content" id="json-input">
+            <form id="json-form">
+                <div class="form-group">
+                    <label for="json-content">Cole o conteúdo JSON do log:</label>
+                    <textarea id="json-content" placeholder="Cole o JSON aqui..." required></textarea>
+                </div>
+                <button type="submit">Analisar Log</button>
+            </form>
+        </div>
+        
+        <div class="loading">
+            <div class="spinner"></div>
+            <p>Analisando log...</p>
+        </div>
+        
+        <div class="error" id="error-message"></div>
+        
+        <div class="result" id="result-container">
+            <h2>Resultado da Análise</h2>
+            
+            <div class="summary-box">
+                <h3>Resumo</h3>
+                <p id="summary-text"></p>
+                <div>
+                    <span>Tipo de Evento: </span>
+                    <span class="event-type" id="event-type"></span>
+                    <span>Data/Hora: </span>
+                    <span id="timestamp"></span>
+                </div>
+            </div>
+            
+            <div class="details-section">
+                <h3>Detalhes</h3>
+                
+                <div>
+                    <h4>Informações Básicas</h4>
+                    <p><strong>Categoria:</strong> <span id="category"></span></p>
+                    <p><strong>Nível de Log:</strong> <span id="log-level"></span></p>
+                    <p><strong>Mensagem Principal:</strong> <span id="main-message"></span></p>
+                </div>
+                
+                <div>
+                    <h4>Componentes Envolvidos</h4>
+                    <ul class="component-list" id="components-list"></ul>
+                </div>
+                
+                <div>
+                    <h4>Métodos Principais</h4>
+                    <ul class="component-list" id="methods-list"></ul>
+                </div>
+                
+                <div id="files-section">
+                    <h4>Arquivos Relevantes</h4>
+                    <ul class="component-list" id="files-list"></ul>
+                </div>
+                
+                <div>
+                    <h4>IDs de Rastreamento</h4>
+                    <p><strong>Trace ID:</strong> <span class="trace-id" id="trace-id"></span></p>
+                    <p><strong>Span ID:</strong> <span class="trace-id" id="span-id"></span></p>
+                </div>
+            </div>
+            
+            <div class="details-section">
+                <h3>Relatório Completo</h3>
+                <pre id="full-report"></pre>
+            </div>
+        </div>
+    </div>
+    
+    <footer>
+        <p>Analisador de Logs JSON &copy; 2025</p>
+    </footer>
+    
+    <script>
+        // Alternar entre as abas
+        document.querySelectorAll('.tab').forEach(tab => {
+            tab.addEventListener('click', () => {
+                // Remover classe active de todas as abas
+                document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+                document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+                
+                // Adicionar classe active na aba clicada
+                tab.classList.add('active');
+                document.getElementById(tab.dataset.tab).classList.add('active');
+            });
+        });
+        
+        // Formulário de upload de arquivo
+        document.getElementById('upload-form').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+            const fileInput = document.getElementById('log-file');
+            if (!fileInput.files.length) {
+                showError('Por favor, selecione um arquivo.');
+                return;
+            }
+            
+            const file = fileInput.files[0];
+            const formData = new FormData();
+            formData.append('file', file);
+            
+            await analyzeLog('/analyze', formData);
+        });
+        
+        // Formulário de entrada JSON
+        document.getElementById('json-form').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+            const jsonContent = document.getElementById('json-content').value;
+            if (!jsonContent.trim()) {
+                showError('Por favor, insira o conteúdo JSON.');
+                return;
+            }
+            
+            try {
+                const jsonData = JSON.parse(jsonContent);
+                await analyzeLog('/analyze-json', jsonData, 'json');
+            } catch (error) {
+                showError('JSON inválido. Verifique o formato e tente novamente.');
+            }
+        });
+        
+        // Função para analisar o log
+        async function analyzeLog(url, data, contentType = 'formData') {
+            // Mostrar loading e esconder erro e resultado
+            document.querySelector('.loading').style.display = 'block';
+            document.getElementById('error-message').style.display = 'none';
+            document.getElementById('result-container').style.display = 'none';
+            
+            try {
+                const options = {
+                    method: 'POST'
+                };
+                
+                if (contentType === 'formData') {
+                    options.body = data;
+                } else if (contentType === 'json') {
+                    options.body = JSON.stringify(data);
+                    options.headers = {
+                        'Content-Type': 'application/json'
+                    };
+                }
+                
+                const response = await fetch(url, options);
+                const result = await response.json();
+                
+                if (!response.ok) {
+                    throw new Error(result.error || 'Erro ao analisar o log.');
+                }
+                
+                displayResult(result);
+            } catch (error) {
+                showError(error.message);
+            } finally {
+                document.querySelector('.loading').style.display = 'none';
+            }
+        }
+        
+        // Função para exibir o resultado
+        function displayResult(result) {
+            // Preencher os campos com os dados da análise
+            const analysis = result.analysis;
+            const basic = analysis.basic_info;
+            const message = analysis.message_info;
+            
+            // Resumo
+            document.getElementById('summary-text').textContent = analysis.summary;
+            
+            // Tipo de evento
+            const eventTypeEl = document.getElementById('event-type');
+            eventTypeEl.textContent = analysis.event_type;
+            
+            // Adicionar classe baseada no tipo de evento
+            eventTypeEl.className = 'event-type';
+            if (analysis.event_type === 'Erro' || analysis.event_type === 'Exceção') {
+                eventTypeEl.classList.add('event-error');
+            } else if (analysis.event_type === 'Informação') {
+                eventTypeEl.classList.add('event-info');
+            } else {
+                eventTypeEl.classList.add('event-warning');
+            }
+            
+            // Informações básicas
+            document.getElementById('timestamp').textContent = basic.timestamp;
+            document.getElementById('category').textContent = basic.category;
+            document.getElementById('log-level').textContent = basic.log_level;
+            document.getElementById('main-message').textContent = message.main_message;
+            
+            // Componentes
+            const componentsList = document.getElementById('components-list');
+            componentsList.innerHTML = '';
+            message.components.forEach(component => {
+                const li = document.createElement('li');
+                li.textContent = component;
+                componentsList.appendChild(li);
+            });
+            
+            // Métodos
+            const methodsList = document.getElementById('methods-list');
+            methodsList.innerHTML = '';
+            message.key_methods.forEach(method => {
+                const li = document.createElement('li');
+                li.textContent = method;
+                methodsList.appendChild(li);
+            });
+            
+            // Arquivos
+            const filesSection = document.getElementById('files-section');
+            const filesList = document.getElementById('files-list');
+            filesList.innerHTML = '';
+            
+            if (message.files && message.files.length > 0) {
+                filesSection.style.display = 'block';
+                message.files.forEach(file => {
+                    const li = document.createElement('li');
+                    li.textContent = file;
+                    filesList.appendChild(li);
+                });
+            } else {
+                filesSection.style.display = 'none';
+            }
+            
+            // IDs de rastreamento
+            document.getElementById('trace-id').textContent = basic.trace_id;
+            document.getElementById('span-id').textContent = basic.span_id;
+            
+            // Relatório completo
+            document.getElementById('full-report').textContent = result.report;
+            
+            // Mostrar o resultado
+            document.getElementById('result-container').style.display = 'block';
+            
+            // Rolar para o resultado
+            document.getElementById('result-container').scrollIntoView({ behavior: 'smooth' });
+        }
+        
+        // Função para exibir erro
+        function showError(message) {
+            const errorElement = document.getElementById('error-message');
+            errorElement.textContent = message;
+            errorElement.style.display = 'block';
+        }
+    </script>
+</body>
+</html>
