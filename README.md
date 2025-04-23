@@ -62,6 +62,10 @@ Acesse `http://localhost:5001` no seu navegador para utilizar a interface web.
 - HTML/CSS Vanilla
 - Análise de logs baseada em padrões (com auxílio do Manus)
 
+## Demonstração
+
+https://github.com/user-attachments/assets/5cead20c-a679-4998-af4b-d63dbf1d834e
+
 ---
 
 ## 🧑‍💻 Autoria
